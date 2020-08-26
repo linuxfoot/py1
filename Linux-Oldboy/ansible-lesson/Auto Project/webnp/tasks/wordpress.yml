@@ -1,0 +1,87 @@
+---
+# tasks file for webnp
+- name: 1.Update nginx repo
+  template:
+   src: nginx_repo.j2
+   dest: /etc/yum.repos.d/nginx_repo.repo
+
+- name: 2.Remove old version and flush yum
+  script: comm.sh
+
+- name: 3.Install nginx and php
+  yum:
+   name: '{{ applist }}'
+   state: installed
+   enablerepo: LNMP_repo
+
+- name: 4.Create user www
+  user:
+   name: www
+   uid: 2020
+   group: www
+   shell: /sbin/nologin
+   create_home: no
+
+- name: 5.Config php
+  lineinfile:
+    path: /etc/php-fpm.d/www.conf
+    regexp: '{{ item.old }}'
+    line: '{{ item.new }}'
+  loop:
+   - { old: 'user = apache', new: 'user=www'  }
+   - { old: 'group = apache', new: 'group=www'  }
+  notify: systemd restart php
+
+- name: 6.Systemd start
+  systemd:
+   name: '{{ item }}'
+   state: started
+   enabled: yes
+  loop:
+   - nginx
+   - php-fpm
+
+- name: 7.download
+  get_url:
+   url: '{{ item.url }}'
+   dest: '{{ item.dest }}' 
+  loop:
+   - { url: 'https://wordpress.org/latest.tar.gz', dest: '/tmp/wordp.tar.gz' }
+   - { url: 'http://download.edusoho.com/edusoho-8.2.17.tar.gz', dest: '/tmp/edu.tar.gz' }
+   - { url: 'https://wenda.wecenter.com/download/WeCenter_3-5-0.zip', dest: '/tmp/wecenter.zip' }
+
+- name: 8.unarchive
+  unarchive:
+   src: '{{ item }}' 
+   dest: /usr/share/nginx/html/
+   remote_src: yes
+   owner: www
+   group: www
+   mode: 0755
+  loop:
+   - /tmp/wordp.tar.gz
+   - /tmp/edu.tar.gz
+   - /tmp/wecenter.zip
+
+- name: 8.unarchive
+  unarchive:
+   src: /tmp/wecenter.zip
+   dest: /tmp/
+   remote_src: yes
+   owner: www
+   group: www
+  tags: [ test ]
+
+  name: 9.Upload conf
+  copy:
+   src: '{{ item.src }}'
+   dest: '{{ item.dest }}'
+  loop:
+   - {src: 'nginx.conf',dest: '/etc/nginx/nginx.conf'}
+   - {src: 'edu.conf',dest: '/etc/nginx/conf.d/edu.conf'}
+   - {src: 'wordpress.conf',dest: '/etc/nginx/conf.d/wordpress.conf'}
+   - {src: 'zhihu.conf',dest: '/etc/nginx/conf.d/zhihu.conf'}
+  notify: Restart nginx
+  tags: [ test1 ]
+
+- import_tasks: wordpress.yml

@@ -1,0 +1,4 @@
+- hosts: yumclients
+  gather_facts: 
+  roles:
+   - yum_c

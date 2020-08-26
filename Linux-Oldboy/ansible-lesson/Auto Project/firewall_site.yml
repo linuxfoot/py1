@@ -1,0 +1,4 @@
+- hosts: auto51db
+  remote_user: root
+  roles:
+    - db

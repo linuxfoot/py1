@@ -1,0 +1,151 @@
+    - name: 1. Download depend1
+      get_url:
+       url: http://springdale.math.ias.edu/data/puias/unsupported/7/x86_64/iksemel-1.4-6.sdl7.x86_64.rpm
+       dest: /tmp/iksemel-1.4-6.sdl7.x86_64.rpm
+    
+    - name: 1.1 Install depend1
+      yum:
+       name: /tmp/iksemel-1.4-6.sdl7.x86_64.rpm
+       state: installed
+
+    - name: 1.2 Config zabbix.repo
+      template:
+        src: zabbix.j2
+        dest: /etc/yum.repos.d/zabbix.repo
+
+    - name: 1.3 Install php 5.4
+      yum:
+       name: '{{ item }}' 
+       state: installed
+       enablerepo: zabbix_repo
+       skip_broken: yes
+      loop:
+        - php-gd
+        - php-xml
+        - php-mbstring
+        - php-ldap
+        - php-pear
+        - php-xmlrpc
+
+    - name: 1.4 Remove old
+      yum:
+       name: php-common-5.4.16-48.el7.x86_64
+       state: absent
+
+    - name: 1.5 Install php 7
+      yum:
+       name: '{{ item }}'
+       state: installed
+       enablerepo: zabbix_repo
+       skip_broken: yes
+      loop:
+       - php70w.x86_64
+       - php70w-cli.x86_64
+       - php70w-common.x86_64
+       - php70w-gd.x86_64
+       - php70w-ldap.x86_64
+       - php70w-mbstring.x86_64
+       - php70w-mysql.x86_64
+       - php70w-pdo.x86_64
+       - php70w-pear.noarch
+       - php70w-process.x86_64
+       - php70w-xml.x86_64
+       - php70w-xmlrpc.x86_64
+       - php70w-fpm
+      notify: restart
+
+    - name: 1.6. Config php
+        lineinfile:
+          path: /etc/php.ini
+          regexp: 'date.timezone'
+          line: date.timezone = Asia/Shanghai
+      notify: restart
+
+    - name: 2 Install zabbix
+      yum:
+        name: '{{ item }}'
+        state: installed
+        skip_broken: yes
+      loop:
+        - zabbix-server-mysql
+        - zabbix-web-mysql
+      notify: restart
+
+    - name: 3. Systemd
+      systemd:
+        name: '{{ item }}'
+        state: started
+        enabled: yes
+      loop:
+       - zabbix-server
+       - httpd
+       - mariadb
+       - php-fpm
+
+    - name: 4 DB and tools
+      yum:
+        name: '{{ item }}'
+        state: installed
+      loop:
+        - mariadb-server
+        - python-pip
+
+    - name: 5 Install PyMySql and pexpect
+      pip: 
+       name: '{{ item }}'
+      loop:
+       - PyMySql
+       - pexpect
+
+    - name: 6. Start DB
+      systemd:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    - name: 7. DB Initialization
+      expect:
+       command: mysql_secure_installation
+       responses:
+        just press enter here: "\n"
+        Set root password: "Y"
+        New password: "1234"
+        Re-enter new password: "1234"
+        Remove anonymous users: "Y"
+        Disallow root login remotely: "N"
+        Remove test database and access to it: "Y"
+        Reload privilege tables now: "Y"
+
+    - name: 8. Create DB
+      mysql_db:
+       name:
+        - zabbix
+       state: present 
+       encoding: utf8
+       login_user: root
+       login_password: "1234"
+
+    - name: 9. Create DB users
+      mysql_user:
+       name: zabbixer
+       host: localhost
+       priv: zabbix.*:ALL
+       password: "123456"
+       login_user: root
+       login_password: "1234"
+
+    - name: 10 Config DB
+      script: comm.sh
+
+    - name: 11 Config conf
+      lineinfile:
+       path: /etc/zabbix/zabbix_server.conf
+       regexp: '{{ item.if }}'
+       line: '{{ item.info }}'
+      loop:
+       - { if: 'DBHost=', info: 'DBHost=localhost' }
+       - { if: 'DBName=', info: 'DBName=zabbix' }
+       - { if: 'DBUser=', info: 'DBUser=zabbixer' }
+       - { if: 'DBPassword=', info: 'DBPassword=123456' }
+
+
