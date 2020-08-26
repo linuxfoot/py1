@@ -1,5 +1,0 @@
-- import_tasks: jum_site.yml
-- import_tasks: vpn_site.yml
-- import_tasks: vpn_c_site.yml
-- import_tasks: firewall_site.yml
-- import_tasks: zab_site.yml
