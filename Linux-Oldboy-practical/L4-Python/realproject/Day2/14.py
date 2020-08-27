@@ -1,0 +1,13 @@
+container=[(1,2),(3,4),(5,6)]
+res=dict(container)
+print(res)
+con1=[["a","b"],("c","d")]
+print(dict(con1))
+con2=(["e","f"],("g","h"))
+print(dict(con2))
+con3={("i","j"),("k","l")}
+print(dict(con3))
+con4={"xy","zv","rR"}
+print(dict(con4))
+con5=[{"Y",1},{"U",2,},{"Z",3}]
+print(dict(con5))

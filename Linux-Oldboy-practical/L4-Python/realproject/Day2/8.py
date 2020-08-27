@@ -1,0 +1,10 @@
+bool1=True
+int1=1
+float1=3.14
+complex1=3+5j
+res=bool1+int1
+print(res)
+res=bool1+float1
+print(res)
+res=bool1+complex1
+print(res)

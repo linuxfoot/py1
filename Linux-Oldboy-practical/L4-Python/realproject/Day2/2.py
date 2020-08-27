@@ -30,7 +30,7 @@ print(tuplevar1,type(tuplevar1))
 tuplevar1=(123,)
 print(tuplevar1,type(tuplevar1))
 tuplevar1=1,2,3
-print(tuplevar1,type(tuplevar1))
+print(tuplevar1,type(tuplevar1),"a")
 strvar="abcd efg"
 res=strvar[3]
 print(res)
