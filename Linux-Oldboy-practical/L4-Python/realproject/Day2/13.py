@@ -1,0 +1,13 @@
+var6="123"
+res=tuple(var6)
+print(res)
+res=set(var6)
+print(res)
+res=list(var6)
+print(res)
+i={"a","b","c"}
+res=list(i)
+print(res)
+di={"a":1,"b":2}
+res=list(di)
+print(res)
