@@ -1,0 +1,12 @@
+var=True+2
+var1=True+2.1
+var2=True+3+2j
+var3=2+3.2
+var4=2+3+2j
+var5=3.4+2+3j
+print(var,type(var))
+print(var1,type(var1))
+print(var2,type(var2))
+print(var3,type(var3))
+print(var4,type(var4))
+print(var5,type(var5))
