@@ -1,0 +1,67 @@
+    - name: 5.1 Install PyMySql and pexpect
+      pip: 
+       name: '{{ item }}'
+      loop:
+       - PyMySql
+       - pexpect
+       
+    - name: 5.2 Start DB
+      systemd:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    - name: 5.3 DB Initialization
+      expect:
+       command: mysql_secure_installation
+       responses:
+        just press enter here: "\n"
+        Set root password: "Y"
+        New password: "1234"
+        Re-enter new password: "1234"
+        Remove anonymous users: "Y"
+        Disallow root login remotely: "N"
+        Remove test database and access to it: "Y"
+        Reload privilege tables now: "Y"
+
+    - name: 5.4 Create DB
+      mysql_db:
+       name:
+        - zabbix
+       state: present 
+       encoding: utf8
+       login_user: root
+       login_password: "1234"
+
+    - name: 5.5 Create DB users
+      mysql_user:
+       name: zabbixer
+       host: localhost
+       priv: zabbix.*:ALL
+       password: "123456"
+       login_user: root
+       login_password: "1234"
+
+    - name: 5.6 Config DB
+      script: comm.sh
+
+    - name: 5.7 Config zabbix db conf
+      lineinfile:
+       path: /etc/zabbix/zabbix_server.conf
+       regexp: '{{ item.if }}'
+       line: '{{ item.info }}'
+      loop:
+       - { if: 'DBHost=', info: 'DBHost=localhost' }
+       - { if: 'DBName=', info: 'DBName=zabbix' }
+       - { if: 'DBUser=', info: 'DBUser=zabbixer' }
+       - { if: 'DBPassword=', info: 'DBPassword=123456' }
+
+    - name: 5.8 Systemd
+      systemd:
+        name: '{{ item }}'
+        state: restarted
+        enabled: yes
+      loop:
+       - zabbix-server 
+       - httpd
+       - mariadb

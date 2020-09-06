@@ -1,0 +1,85 @@
+    - name: 1. Download depend1
+      get_url:
+       url: http://springdale.math.ias.edu/data/puias/unsupported/7/x86_64/iksemel-1.4-6.sdl7.x86_64.rpm
+       dest: /tmp/iksemel-1.4-6.sdl7.x86_64.rpm
+
+    - name: 1.1 Install depend1
+      yum:
+       name: /tmp/iksemel-1.4-6.sdl7.x86_64.rpm
+       state: installed
+
+    - name: 1.2 Config zabbix.repo
+      template:
+        src: zabbix.j2
+        dest: /etc/yum.repos.d/zabbix.repo
+
+    - name: 1.3 Install php 5.4
+      yum:
+       name: '{{ item }}'
+       state: installed
+       enablerepo: zabbix_repo
+       skip_broken: yes
+      loop:
+        - php-gd
+        - php-xml
+        - php-mbstring
+        - php-ldap
+        - php-pear
+        - php-xmlrpc
+
+    - name: 2 Install zabbix
+      yum:
+        name: '{{ item }}'
+        state: installed
+        skip_broken: yes
+      loop:
+        - zabbix-server-mysql
+        - zabbix-web-mysql
+      notify: restart_httpd
+
+    - name: 1.4 Remove old
+      yum:
+       name: php-common-5.4.16-48.el7.x86_64
+       state: absent
+
+    - name: 1.5 Install php 7
+      yum:
+       name: '{{ item }}'
+       state: installed
+       enablerepo: zabbix_repo
+       skip_broken: yes
+      loop:
+       - php70w.x86_64
+       - php70w-cli.x86_64
+       - php70w-common.x86_64
+       - php70w-gd.x86_64
+       - php70w-ldap.x86_64
+       - php70w-mbstring.x86_64
+       - php70w-mysql.x86_64
+       - php70w-pdo.x86_64
+       - php70w-pear.noarch
+       - php70w-process.x86_64
+       - php70w-xml.x86_64
+       - php70w-xmlrpc.x86_64
+       - php70w-fpm
+      notify: restart
+
+    - name: 1.6 Config php
+      lineinfile:
+       path: /etc/php.ini
+       regexp: 'date.timezone'
+       line: date.timezone = Asia/Shanghai
+      notify: restart
+#
+#
+#
+#    - name: 3. Systemd
+#      systemd:
+#        name: '{{ item }}'
+#        state: started
+#        enabled: yes
+#      loop:
+#       - zabbix-server
+#       - httpd
+#       - php-fpm
+#
